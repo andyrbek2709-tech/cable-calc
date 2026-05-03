@@ -1,0 +1,9 @@
+{
+  "build": {
+    "builder": "dockerfile",
+    "dockerfile": "cable_calc/Dockerfile"
+  },
+  "deploy": {
+    "startCommand": "python cable_calc/main.py"
+  }
+}
