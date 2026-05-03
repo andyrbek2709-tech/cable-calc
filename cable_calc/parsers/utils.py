@@ -23,8 +23,8 @@ CABLE_MARK_RE = re.compile(
 )
 
 SECTION_RE = re.compile(
-    r'(\d+)\s*[xхXХ]\s*\(?\s*(\d+(?:[.,]\d+)?)\s*(?:мм²)?'
-    r'(?:\s*[\+\-]\s*(\d+)\s*[xхXХ]\s*\(?\s*(\d+(?:[.,]\d+)?)\s*(?:мм²)?)?\s*\)?',
+    r'(\d+)\s*[xхXХ]\s*\(?\s*(?:(?:\d+\s*[xхXХ]\s*)*)?(\d+(?:[.,]\d+)?)'
+    r'(?:\s*[\+\-]\s*\(?\s*(?:(?:\d+\s*[xхXХ]\s*)*)?(\d+(?:[.,]\d+)?))?\s*\)?',
     re.UNICODE
 )
 
@@ -52,8 +52,8 @@ def parse_section(text: str) -> Tuple[int, float, float, str]:
     s_str = m.group(2).replace(',', '.')
     s = float(s_str)
     zs = 0.0
-    if m.group(3) and m.group(4):
-        zs_str = m.group(4).replace(',', '.')
+    if m.group(3):  # теперь группа 3 - доп сечение
+        zs_str = m.group(3).replace(',', '.')
         zs = float(zs_str)
     phases = n if n in (1, 2) else 3
     return phases, s, zs, m.group(0).strip()
