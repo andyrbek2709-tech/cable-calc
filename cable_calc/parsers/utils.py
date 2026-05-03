@@ -1,17 +1,30 @@
 import re
 from typing import Tuple
 
-# Марки: правый \b -> (?!\w) чтобы работало перед цифрами (АВВГ4x16)
+# Марки кабелей - расширенный список для таблиц кабельных журналов
 CABLE_MARK_RE = re.compile(
-    r'(?<!\w)(ZA-?Y[CW]?V\d*|ZA-?KYW?V\d*|АВВГнг|АСБ2л|ВВГнг-LS|ВВГнг|АВВГ|ВВГ|ААБ2лШв|ААШв|АСБ|СБ|ПВС|КГ|КВВ|'
-    r'КВВГЭНГ|КВВГЭ|КВВГ|КНРнг|'
-    r'NYY|NYM|N2XY|NA2XY)',
+    r'(?<!\w)('
+    # Экранированные кабели (ZA-Y...)
+    r'ZA-?Y[CW]?V\d*|ZA-?KYW?V\d*|'
+    # ВВГ серия
+    r'ВВГ(?:(?:нг)?(?:-LS|-CS)?|Э|П)?|'
+    # Броненосные и специальные
+    r'ВБШв?|ВБШп|ВБШнг|'
+    # АВВ/АВВГ
+    r'АВВГ(?:нг)?|АВВ|ААБ2л(?:Шв)?|ААШв|'
+    # Контрольные и специальные
+    r'КГ(?:Ш)?|КГ-ХС|КВВ(?:Г)?|КВВГЭ(?:НГ)?|КНР(?:нг)?|'
+    # Прочие
+    r'ПВС|СБ|АСБ(?:2л)?|'
+    # IEC стандарты
+    r'N[AY]?[Y2]?X?Y|NYM|N2XY|NA2XY'
+    r')(?![a-zA-Zа-яА-Я0-9])',
     re.IGNORECASE | re.UNICODE
 )
 
 SECTION_RE = re.compile(
-    r'(\d+)\s*[xхXХ]\s*(\d+(?:\.\d+)?)'
-    r'(?:\s*\+\s*(\d+)\s*[xхXХ]\s*(\d+(?:\.\d+)?))?',
+    r'(\d+)\s*[xхXХ]\s*(\d+(?:[.,]\d+)?)'
+    r'(?:\s*[\+\-]\s*(\d+)\s*[xхXХ]\s*(\d+(?:[.,]\d+)?))?',
     re.UNICODE
 )
 
@@ -20,8 +33,12 @@ VOLTAGE_RE = re.compile(r'(\d+(?:[.,]\d+)?)\s*(?:кВ|kV)\b', re.IGNORECASE)
 
 
 def _fix_ocr_section(text: str) -> str:
-    """4x9541x50 -> 4x95+1x50 (OCR: '+' читается как '4')."""
-    return re.sub(r'(\d+[xхXХ]\d+?)4(1[xхXХ]\d+)', r'\g<1>+\2', text)
+    """Исправляет частые OCR ошибки в сечениях кабеля."""
+    # Ошибка: '+' читается как '4': 4x9541x50 -> 4x95+1x50
+    text = re.sub(r'(\d+[xхXХ]\d+?)4(1[xхXХ]\d+)', r'\g<1>+\2', text)
+    # Замена запятых на точки (OCR может путать)
+    text = text.replace(',', '.')
+    return text
 
 
 def parse_section(text: str) -> Tuple[int, float, float, str]:
@@ -30,8 +47,12 @@ def parse_section(text: str) -> Tuple[int, float, float, str]:
     if not m:
         return 3, 0.0, 0.0, ""
     n = int(m.group(1))
-    s = float(m.group(2))
-    zs = float(m.group(4)) if m.group(3) and m.group(4) else 0.0
+    s_str = m.group(2).replace(',', '.')
+    s = float(s_str)
+    zs = 0.0
+    if m.group(3) and m.group(4):
+        zs_str = m.group(4).replace(',', '.')
+        zs = float(zs_str)
     phases = n if n in (1, 2) else 3
     return phases, s, zs, m.group(0).strip()
 
