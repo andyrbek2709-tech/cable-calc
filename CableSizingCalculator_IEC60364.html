@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Расчёт сечений кабелей — IEC 60364</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{--bg:#060b14;--sur:#0d1520;--sur2:#162030;--bor:#1e3050;--bor2:#2a4060;--txt:#d0ddf0;--dim:#6080a0;--acc:#f0a020;--adim:#50340a;--grn:#20d060;--gdim:#0a2a18;--red:#f04040;--rdim:#2a0a0a;--blu:#4080f0;--bdim:#0a1840;--mono:'Courier New',monospace;--sans:'Segoe UI',system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:13px;min-height:100vh;display:flex;flex-direction:column}
+.app-header{background:var(--sur);border-bottom:2px solid var(--acc);padding:12px 24px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.hico{width:38px;height:38px;background:var(--acc);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#000;font-weight:700;flex-shrink:0}
+.htitle h1{font-size:15px;font-weight:600;color:var(--txt);letter-spacing:.02em}
+.htitle p{font-size:10px;color:var(--dim);font-family:var(--mono);margin-top:2px}
+.hbadge{margin-left:auto;background:var(--adim);color:var(--acc);padding:4px 12px;border-radius:4px;font-size:11px;font-family:var(--mono);border:1px solid var(--acc)}
+.app-body{display:grid;grid-template-columns:360px 1fr;flex:1;height:calc(100vh - 66px)}
+.inp{background:var(--sur);border-right:1px solid var(--bor);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--bor2) var(--sur)}
+.res{background:var(--bg);overflow-y:auto;padding:16px;scrollbar-width:thin;scrollbar-color:var(--bor2) var(--bg)}
+.sec{border-bottom:1px solid var(--bor);padding:14px 16px}
+.sec-t{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--acc);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.sec-t::before{content:'';display:block;width:3px;height:12px;background:var(--acc);border-radius:2px}
+.gr2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.gr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.fl{display:flex;flex-direction:column;gap:3px;margin-bottom:8px}
+.fl:last-child{margin-bottom:0}
+.lbl{font-size:11px;color:var(--dim)}
+.lbl em{font-style:normal;color:var(--acc);font-family:var(--mono)}
+input,select{width:100%;background:var(--sur2);border:1px solid var(--bor);color:var(--txt);padding:6px 9px;border-radius:4px;font-size:13px;font-family:var(--mono);outline:none;transition:border-color .2s}
+input:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 2px rgba(240,160,32,.15)}
+select{font-family:var(--sans);cursor:pointer}
+select option{background:var(--sur2)}
+.btn-p{width:100%;padding:11px;background:var(--acc);color:#000;border:none;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.04em;transition:all .2s;font-family:var(--sans)}
+.btn-p:hover{background:#ffc040}
+.btn-s{width:100%;padding:10px;background:transparent;color:var(--acc);border:1px solid var(--acc);border-radius:4px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;transition:all .2s;font-family:var(--sans)}
+.btn-s:hover{background:rgba(240,160,32,.1)}
+.btn-s:disabled{opacity:.35;cursor:not-allowed}
+.placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:var(--dim);text-align:center;gap:10px}
+.placeholder .ico{font-size:48px;opacity:.25}
+.step-card{background:var(--sur);border:1px solid var(--bor);border-radius:6px;overflow:hidden;margin-bottom:10px}
+.step-hd{padding:9px 14px;background:var(--sur2);border-bottom:1px solid var(--bor);display:flex;align-items:center;justify-content:space-between}
+.step-hl{display:flex;align-items:center;gap:8px}
+.snum{width:22px;height:22px;border-radius:50%;background:var(--bdim);color:var(--blu);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.stit{font-size:12px;font-weight:600;color:var(--txt)}
+.badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:3px;font-family:var(--mono);letter-spacing:.04em;border:1px solid}
+.b-pass{background:var(--gdim);color:var(--grn);border-color:var(--grn)}
+.b-fail{background:var(--rdim);color:var(--red);border-color:var(--red)}
+.b-info{background:var(--bdim);color:var(--blu);border-color:var(--blu)}
+.step-body{padding:12px 14px;display:grid;grid-template-columns:3fr 2fr;gap:14px;align-items:start}
+.fbox{background:var(--sur2);border:1px solid var(--bor);border-radius:4px;padding:10px 12px}
+.flbl{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.ftxt{font-family:var(--mono);font-size:11.5px;white-space:pre;line-height:1.8;color:var(--txt)}
+.rbox{text-align:center;padding:8px}
+.rval{font-size:28px;font-weight:600;font-family:var(--mono);color:var(--txt);line-height:1}
+.runit{font-size:12px;color:var(--dim);margin-left:3px}
+.rcheck{font-size:11px;font-family:var(--mono);margin-top:8px;line-height:1.5}
+.rcheck.pass{color:var(--grn)}
+.rcheck.fail{color:var(--red)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid var(--bor);margin-bottom:12px}
+.tblab{font-size:11px;color:var(--dim);font-family:var(--mono)}
+.overall{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;border:1px solid}
+.overall.pass{color:var(--grn);border-color:var(--grn);background:var(--gdim)}
+.overall.fail{color:var(--red);border-color:var(--red);background:var(--rdim)}
+.sum-card{background:var(--sur);border:1px solid var(--bor);border-radius:6px;overflow:hidden;margin-bottom:10px}
+.sum-hd{padding:10px 16px;border-bottom:1px solid var(--acc);background:linear-gradient(90deg,rgba(240,160,32,.1),transparent);display:flex;align-items:center;justify-content:space-between}
+.sum-ht{font-size:12px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.05em}
+.sum-body{padding:14px 16px}
+.sum-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.sum-item{text-align:center;padding:12px;border:1px solid var(--bor);border-radius:4px;background:var(--sur2)}
+.sum-lbl{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+.sum-val{font-size:18px;font-weight:700;font-family:var(--mono)}
+.sum-sub{font-size:9px;color:var(--dim);margin-top:3px}
+.rec{text-align:center;padding:14px;border:1px solid var(--acc);border-radius:6px;background:var(--adim)}
+.rec-lbl{font-size:10px;color:var(--acc);text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px}
+.rec-val{font-size:26px;font-weight:700;font-family:var(--mono);color:var(--acc)}
+.rec-note{font-size:11px;color:var(--dim);margin-top:5px}
+#rw{display:none}
+@media(max-width:900px){.app-body{grid-template-columns:1fr;height:auto}.inp{max-height:60vh}.app-body{overflow:auto}}
+</style>
+</head>
+<body>
+<header class="app-header">
+  <div class="hico">⚡</div>
+  <div class="htitle">
+    <h1>РАСЧЁТ СЕЧЕНИЙ СИЛОВЫХ КАБЕЛЕЙ</h1>
+    <p>Методика: IEC 60364-5-52 · IEC 60364-4-43 · Cable Sizing Philosophy NCOC</p>
+  </div>
+  <div class="hbadge">НН 0,4 кВ / 230 В</div>
+</header>
+<div class="app-body">
+<aside class="inp">
+  <div class="sec">
+    <div class="sec-t">Сведения о проекте</div>
+    <div class="fl"><label class="lbl">Наименование проекта</label><input id="i_proj" type="text" value='56" Gas Line Corrosion Issue. Steam and Condensate.' style="font-family:var(--sans);font-size:12px"></div>
+    <div class="fl"><label class="lbl">Номер документа</label><input id="i_docn" type="text" value="KE01-A1-332-JG-E-CA-0004-000"></div>
+    <div class="gr3">
+      <div class="fl"><label class="lbl">Фидер</label><input id="i_feed" type="text" placeholder="A1-920-EH-242-15R"></div>
+      <div class="fl"><label class="lbl">Разработал</label><input id="i_auth" type="text" placeholder="Ф.И.О." style="font-family:var(--sans)"></div>
+      <div class="fl"><label class="lbl">Дата</label><input id="i_date" type="date"></div>
+    </div>
+  </div>
+  <div class="sec">
+    <div class="sec-t">Параметры нагрузки</div>
+    <div class="gr3">
+      <div class="fl"><label class="lbl">Мощность <em>P</em>, Вт</label><input id="i_P" type="number" min="1" step="10" value="1380"></div>
+      <div class="fl"><label class="lbl">Напряжение <em>U</em></label>
+        <select id="i_U"><option value="230" selected>230 В (1ф)</option><option value="400">400 В (3ф)</option></select></div>
+      <div class="fl"><label class="lbl">cos <em>φ</em></label><input id="i_cphi" type="number" min="0.1" max="1" step="0.01" value="0.95"></div>
+    </div>
+  </div>
+  <div class="sec">
+    <div class="sec-t">Параметры кабеля</div>
+    <div class="gr2">
+      <div class="fl"><label class="lbl">Сечение <em>S</em>, мм²</label>
+        <select id="i_S">
+          <option value="2.5">2,5 мм²</option><option value="4">4 мм²</option><option value="6">6 мм²</option>
+          <option value="10" selected>10 мм²</option><option value="16">16 мм²</option><option value="25">25 мм²</option>
+          <option value="35">35 мм²</option><option value="50">50 мм²</option><option value="70">70 мм²</option>
+          <option value="95">95 мм²</option><option value="120">120 мм²</option><option value="150">150 мм²</option>
+          <option value="185">185 мм²</option>
+        </select>
+      </div>
+      <div class="fl"><label class="lbl">Длина <em>L</em>, м</label><input id="i_L" type="number" min="1" step="1" value="103"></div>
+    </div>
+    <div class="fl"><label class="lbl">Тип цепи / предел ΔU</label>
+      <select id="i_vdl">
+        <option value="3" selected>Электрообогрев — ветвь (3 %)</option>
+        <option value="2">Электрообогрев — к щиту (2 %)</option>
+        <option value="4">Электрообогрев — суммарно (4 %)</option>
+        <option value="4b">Двигатели (4 %)</option>
+        <option value="5">Освещение (5 %)</option>
+        <option value="1">Главные кабели (1 %)</option>
+        <option value="0.5">Шинопровод / трансформатор (0,5 %)</option>
+      </select>
+    </div>
+  </div>
+  <div class="sec">
+    <div class="sec-t">Условия прокладки</div>
+    <div class="gr2">
+      <div class="fl"><label class="lbl">Способ прокладки</label>
+        <select id="i_meth"><option value="E" selected>Над землёй, лоток (E)</option><option value="D">Подземно (D)</option></select></div>
+      <div class="fl"><label class="lbl">Температура <em>T</em>, °C</label>
+        <select id="i_T">
+          <option value="30">+30 °C</option><option value="35">+35 °C</option><option value="40">+40 °C</option>
+          <option value="45" selected>+45 °C</option><option value="50">+50 °C</option><option value="55">+55 °C</option><option value="60">+60 °C</option>
+        </select>
+      </div>
+    </div>
+    <div class="gr2">
+      <div class="fl"><label class="lbl">Слоёв лотка</label>
+        <select id="i_lay"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option></select></div>
+      <div class="fl"><label class="lbl">Кабелей в слое</label>
+        <select id="i_cpl"><option>1</option><option>2</option><option>3</option><option>4</option>
+        <option>5</option><option>6</option><option>7</option><option>8</option><option value="9" selected>9</option></select></div>
+    </div>
+  </div>
+  <div class="sec">
+    <div class="sec-t">Короткое замыкание</div>
+    <div class="gr2">
+      <div class="fl"><label class="lbl">Ток КЗ <em>I</em>кз, А</label><input id="i_Isc" type="number" min="0" step="100" value="1000"></div>
+      <div class="fl"><label class="lbl">Время откл. <em>t</em>, с</label><input id="i_t" type="number" min="0.01" step="0.01" value="0.1"></div>
+    </div>
+  </div>
+  <div class="sec">
+    <button class="btn-p" onclick="doCalc()">▶  РАССЧИТАТЬ</button>
+    <button class="btn-s" id="btn_word" onclick="exportWord()" disabled>⬇  Экспорт технического отчёта (.docx)</button>
+  </div>
+</aside>
+
+<section class="res" id="res_panel">
+  <div class="placeholder" id="ph">
+    <div class="ico">📐</div>
+    <div>Заполните параметры и нажмите<br><strong>«РАССЧИТАТЬ»</strong></div>
+    <div style="font-size:10px;font-family:var(--mono);color:var(--dim)">Методика: IEC 60364-5-52 · IEC 60364-4-43</div>
+  </div>
+  <div id="rw">
+    <div class="topbar">
+      <div class="tblab" id="r_flbl"></div>
+      <div class="overall" id="r_ov"></div>
+    </div>
+    <div class="step-card">
+      <div class="step-hd"><div class="step-hl"><div class="snum">1</div><div class="stit">Расчётный ток нагрузки</div></div><span class="badge b-info">IEC формула</span></div>
+      <div class="step-body">
+        <div class="fbox"><div class="flbl">Формула — однофазная цепь</div><div class="ftxt" id="r1f"></div></div>
+        <div class="rbox"><div style="font-size:10px;color:var(--dim);margin-bottom:6px">Ток нагрузки</div><div class="rval" id="r1v"></div><span class="runit">А</span><div style="font-size:10px;color:var(--dim);margin-top:8px;font-family:var(--mono)" id="r1s"></div></div>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-hd"><div class="step-hl"><div class="snum">2</div><div class="stit">Допустимая токонесущая способность</div></div><span class="badge" id="r2b"></span></div>
+      <div class="step-body">
+        <div class="fbox"><div class="flbl">Данные — IEC 60364-5-52</div><div class="ftxt" id="r2f"></div></div>
+        <div class="rbox"><div style="font-size:10px;color:var(--dim);margin-bottom:6px">Допустимый ток</div><div class="rval" id="r2v"></div><span class="runit">А</span><div class="rcheck" id="r2c"></div></div>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-hd"><div class="step-hl"><div class="snum">3</div><div class="stit">Падение напряжения</div></div><span class="badge" id="r3b"></span></div>
+      <div class="step-body">
+        <div class="fbox"><div class="flbl">Формула — однофазная цепь переменного тока</div><div class="ftxt" id="r3f"></div></div>
+        <div class="rbox"><div style="font-size:10px;color:var(--dim);margin-bottom:6px">Падение напряжения</div><div class="rval" id="r3v"></div><span class="runit">%</span><div style="font-size:10px;color:var(--dim);margin-top:3px;font-family:var(--mono)" id="r3a"></div><div class="rcheck" id="r3c"></div></div>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-hd"><div class="step-hl"><div class="snum">4</div><div class="stit">Термическая стойкость к токам КЗ</div></div><span class="badge" id="r4b"></span></div>
+      <div class="step-body">
+        <div class="fbox"><div class="flbl">Формула — IEC 60364-4-43</div><div class="ftxt" id="r4f"></div></div>
+        <div class="rbox"><div style="font-size:10px;color:var(--dim);margin-bottom:6px">Мин. сечение по КЗ</div><div class="rval" id="r4v"></div><span class="runit">мм²</span><div class="rcheck" id="r4c"></div></div>
+      </div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-hd"><div class="sum-ht">⚡ Итог расчёта</div><div class="overall" id="rs_ov"></div></div>
+      <div class="sum-body">
+        <div class="sum-grid">
+          <div class="sum-item"><div class="sum-lbl">Ток нагр. / допуст.</div><div class="sum-val" id="rsI"></div><div class="sum-sub" id="rsIs"></div></div>
+          <div class="sum-item"><div class="sum-lbl">Паден. напр. / предел</div><div class="sum-val" id="rsV"></div><div class="sum-sub" id="rsVs"></div></div>
+          <div class="sum-item"><div class="sum-lbl">Сечение / мин. по КЗ</div><div class="sum-val" id="rsS"></div><div class="sum-sub" id="rsSs"></div></div>
+        </div>
+        <div class="rec"><div class="rec-lbl">Рекомендуемое минимальное сечение</div><div class="rec-val" id="rsR"></div><div class="rec-note" id="rsRn"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+
+<script>
+const CD={2.5:{E:32,D:28,R:9.370,X:0.112},4:{E:42,D:36,R:5.866,X:0.098},6:{E:54,D:44,R:3.966,X:0.090},10:{E:75,D:58,R:2.344,X:0.080},16:{E:100,D:75,R:1.478,X:0.079},25:{E:127,D:96,R:0.935,X:0.081},35:{E:158,D:115,R:0.675,X:0.071},50:{E:192,D:135,R:0.497,X:0.079},70:{E:246,D:167,R:0.346,X:0.077},95:{E:298,D:197,R:0.248,X:0.073},120:{E:346,D:223,R:0.196,X:0.075},150:{E:399,D:251,R:0.162,X:0.073},185:{E:456,D:281,R:0.127,X:0.081}};
+const SECS=[2.5,4,6,10,16,25,35,50,70,95,120,150,185];
+const C1={30:1.00,35:0.96,40:0.91,45:0.87,50:0.82,55:0.76,60:0.71};
+function c2(lay,cpl){if(lay===1)return[1.00,0.88,0.82,0.77,0.75,0.73,0.72,0.71,0.70][Math.min(cpl-1,8)];if(lay===2)return cpl<=3?0.87:cpl<=6?0.77:0.72;return cpl<=3?0.82:cpl<=6?0.73:0.70}
+function g(id){return document.getElementById(id)}
+let RES=null;
+function doCalc(){
+  const P=+g('i_P').value,U=+g('i_U').value,cp=+g('i_cphi').value,L=+g('i_L').value,S=+g('i_S').value;
+  const meth=g('i_meth').value,T=+g('i_T').value,lay=+g('i_lay').value,cpl=+g('i_cpl').value;
+  const Isc=+g('i_Isc').value,t=+g('i_t').value,vdl=parseFloat(g('i_vdl').value);
+  if(!P||!L)return;
+  const sp=Math.sqrt(1-cp*cp),cd=CD[S];
+  const I=P/(U*cp),Izr=meth==='E'?cd.E:cd.D;
+  const c1a=C1[T]||0.87,c2a=c2(lay,cpl),CA=c1a*c2a,Izadj=Izr*CA;
+  const ok1=I<=Izadj;
+  const dU=2*I*(L/1000)*(cd.R*cp+cd.X*sp),dUpct=(dU/U)*100,ok2=dUpct<=vdl;
+  const Smin=(Isc*Math.sqrt(t))/143,ok3=S>=Smin;
+  let rec=null;
+  for(const s of SECS){const d=CD[s];const iz=(meth==='E'?d.E:d.D)*CA;const du=2*I*(L/1000)*(d.R*cp+d.X*sp)/U*100;if(iz>=I&&du<=vdl&&s>=Smin){rec=s;break}}
+  RES={P,U,cp,sp,L,S,meth,T,lay,cpl,Isc,t,vdl,I,Izr,c1a,c2a,CA,Izadj,ok1,dU,dUpct,ok2,Smin,ok3,rec,R:cd.R,X:cd.X,allOk:ok1&&ok2&&ok3};
+  render(RES);
+  g('ph').style.display='none';g('rw').style.display='block';g('btn_word').disabled=false;
+}
+function setBadge(id,ok){const b=g(id);b.textContent=ok?'✓ Выполнено':'✗ Не выполнено';b.className='badge '+(ok?'b-pass':'b-fail')}
+function render(r){
+  const f=(n,d=3)=>n.toFixed(d);
+  const feed=g('i_feed').value||'—';
+  g('r_flbl').textContent='Фидер: '+feed;
+  const ov=g('r_ov');ov.textContent=r.allOk?'✓ Все условия выполнены':'✗ Условия не выполнены';ov.className='overall '+(r.allOk?'pass':'fail');
+  g('r1f').textContent=`I = P / (U × cosφ)\n  = ${r.P} / (${r.U} × ${r.cp})\n  = ${f(r.I)} А`;
+  g('r1v').textContent=f(r.I,2);g('r1s').textContent=`sinφ = ${f(r.sp,4)}`;
+  g('r2f').textContent=`Iz (${r.S} мм², Метод ${r.meth}) = ${r.Izr} А\n   [IEC 60364-5-52, табл. B.52-12]\nC₁ₐ (T=${r.T}°C, табл. B.52-14) = ${r.c1a}\nC₂ₐ (${r.lay} сл.×${r.cpl} каб., табл. B.52-20) = ${r.c2a}\nCA = ${r.c1a} × ${r.c2a} = ${f(r.CA,4)}\nIz_adj = ${r.Izr} × ${f(r.CA,4)} = ${f(r.Izadj,3)} А`;
+  g('r2v').textContent=f(r.Izadj,1);setBadge('r2b',r.ok1);
+  const r2c=g('r2c');r2c.textContent=`${f(r.I,2)} А ${r.ok1?'≤':'>'} ${f(r.Izadj,2)} А\n${r.ok1?'✓ Выполнено':'✗ Превышение!'}`;r2c.className='rcheck '+(r.ok1?'pass':'fail');
+  g('r3f').textContent=`ΔU = 2·I·L·(R_AC·cosφ + X·sinφ)\nR_AC(${r.S}мм²)=${r.R} Ом/км; X(${r.S}мм²)=${r.X} Ом/км\n\nΔU = 2 × ${f(r.I,3)} × ${f(r.L/1000,4)}\n     × (${r.R}×${r.cp} + ${r.X}×${f(r.sp,4)})\n   = ${f(r.dU,4)} В\nΔu% = ${f(r.dU,4)}/${r.U} × 100`;
+  g('r3v').textContent=f(r.dUpct,2);g('r3a').textContent=`(${f(r.dU,3)} В)`;setBadge('r3b',r.ok2);
+  const r3c=g('r3c');r3c.textContent=`${f(r.dUpct,2)}% ${r.ok2?'≤':'>'} ${r.vdl}% (предел)\n${r.ok2?'✓ Выполнено':'✗ Превышение!'}`;r3c.className='rcheck '+(r.ok2?'pass':'fail');
+  g('r4f').textContent=`S_min = I_кз × √t / k\nk = 143  (Cu, XLPE: 90°C→250°C)\n         [IEC 60364-4-43]\n\nS_min = ${r.Isc} × √${r.t} / 143\n      = ${r.Isc} × ${f(Math.sqrt(r.t),5)} / 143\n      = ${f(r.Smin,4)} мм²`;
+  g('r4v').textContent=f(r.Smin,2);setBadge('r4b',r.ok3);
+  const r4c=g('r4c');r4c.textContent=`S=${r.S} мм² ${r.ok3?'≥':'<'} S_min=${f(r.Smin,2)} мм²\n${r.ok3?'✓ Выполнено':'✗ Увеличьте сечение!'}`;r4c.className='rcheck '+(r.ok3?'pass':'fail');
+  const rsov=g('rs_ov');rsov.textContent=r.allOk?'✓ Годен':'✗ Не прошёл';rsov.className='overall '+(r.allOk?'pass':'fail');
+  const Ic=r.ok1?'#20d060':'#f04040',Vc=r.ok2?'#20d060':'#f04040',Sc=r.ok3?'#20d060':'#f04040';
+  g('rsI').innerHTML=`<span style="color:${Ic}">${f(r.I,1)}</span><span style="font-size:12px;color:#6080a0"> / ${f(r.Izadj,1)}</span>`;
+  g('rsIs').textContent='А · '+(r.ok1?'норм.':'превышение');
+  g('rsV').innerHTML=`<span style="color:${Vc}">${f(r.dUpct,2)}</span><span style="font-size:12px;color:#6080a0"> / ${r.vdl}</span>`;
+  g('rsVs').textContent='% · '+(r.ok2?'норм.':'превышение');
+  g('rsS').innerHTML=`<span style="color:${Sc}">${r.S}</span><span style="font-size:12px;color:#6080a0"> / ${f(r.Smin,1)}</span>`;
+  g('rsSs').textContent='мм² · '+(r.ok3?'норм.':'увеличить');
+  g('rsR').textContent=r.rec?`3×${r.rec} мм²`:'Нет подходящего';
+  g('rsR').style.color=r.allOk?'var(--acc)':'var(--red)';
+  g('rsRn').textContent=r.rec&&r.rec===r.S?'✓ Выбранное сечение оптимально':r.rec?`Рекомендуется применить 3×${r.rec} мм²`:'Требуется параллельная прокладка';
+}
+async function exportWord(){
+  if(!RES||typeof JSZip==='undefined')return;
+  const r=RES,f=(n,d=3)=>n.toFixed(d);
+  const proj=g('i_proj').value||'—',docn=g('i_docn').value||'—';
+  const feed=g('i_feed').value||'—',auth=g('i_auth').value||'—',dt=g('i_date').value||new Date().toLocaleDateString('ru-RU');
+  const mname=r.meth==='E'?'Над землёй, лесенка (Метод E)':'Подземно (Метод D)';
+  const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const run=(txt,b,mono,col,sz)=>{let rpr='';if(b)rpr+='<w:b/>';if(mono)rpr+=`<w:rFonts w:ascii="Courier New" w:hAnsi="Courier New"/>`;if(col)rpr+=`<w:color w:val="${col}"/>`;if(sz)rpr+=`<w:sz w:val="${sz*2}"/><w:szCs w:val="${sz*2}"/>`;return`<w:r>${rpr?`<w:rPr>${rpr}</w:rPr>`:''}<w:t xml:space="preserve">${esc(txt)}</w:t></w:r>`};
+  const par=(runs,center,spB,spA)=>{let pp='';if(center)pp+='<w:jc w:val="center"/>';if(spB||spA)pp+=`<w:spacing w:before="${spB||0}" w:after="${spA||60}"/>`;return`<w:p>${pp?`<w:pPr>${pp}</w:pPr>`:''}${Array.isArray(runs)?runs.join(''):runs}</w:p>`};
+  const bord='<w:top w:val="single" w:sz="4" w:color="2E4057"/><w:left w:val="single" w:sz="4" w:color="2E4057"/><w:bottom w:val="single" w:sz="4" w:color="2E4057"/><w:right w:val="single" w:sz="4" w:color="2E4057"/>';
+  const tcM='<w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="120" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="120" w:type="dxa"/></w:tcMar>';
+  const tc=(c,w,sh)=>`<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${sh?`<w:shd w:val="clear" w:color="auto" w:fill="${sh}"/>`:''}${tcM}<w:tcBorders>${bord}</w:tcBorders></w:tcPr>${c}</w:tc>`;
+  const tr=cs=>`<w:tr>${cs.join('')}</w:tr>`;
+  const tbl=(rows,cols)=>{const tot=cols.reduce((a,b)=>a+b,0);return`<w:tbl><w:tblPr><w:tblW w:w="${tot}" w:type="dxa"/><w:tblBorders><w:insideH w:val="single" w:sz="4" w:color="2E4057"/><w:insideV w:val="single" w:sz="4" w:color="2E4057"/></w:tblBorders></w:tblPr><w:tblGrid>${cols.map(c=>`<w:gridCol w:w="${c}"/>`).join('')}</w:tblGrid>${rows.join('')}</w:tbl>`};
+  const H=(n,t)=>par([run(`${n}. ${t}`,true,false,'1F3864',13)],false,160,80);
+  const SH=(n,t)=>par([run(`${n} ${t}`,true,false,'2E4057',12)],false,100,50);
+  const BP=t=>par([run(t,false,false,'',11)],false,0,60);
+  const FP=t=>par([run(t,false,true,'1F4864',10)],false,0,40);
+  const RP=t=>par([run(t,true,true,'',11)],false,0,60);
+  const CP=(ok,t)=>par([run(t,true,false,ok?'1D6F42':'C00000',11)],false,0,80);
+  const passC=r.allOk?'1D6F42':'C00000';
+  const body=[
+    par([run('РАСЧЁТ СЕЧЕНИЙ СИЛОВЫХ КАБЕЛЕЙ',true,false,'1F3864',16)],true,240,80),
+    par([run('Низковольтные кабели 0,4 кВ / 230 В',false,false,'404040',11)],true,0,40),par([]),
+    tbl([
+      tr([tc(par([run('Проект:',true,false,'',10)]),2000,'EAF0F8'),tc(par([run(proj,false,false,'',10)]),5355),tc(par([run('Документ:',true,false,'',10)]),1500,'EAF0F8'),tc(par([run(docn,false,true,'',9)]),1500)]),
+      tr([tc(par([run('Фидер:',true,false,'',10)]),2000,'EAF0F8'),tc(par([run(feed,false,true,'',10)]),5355),tc(par([run('Дата:',true,false,'',10)]),1500,'EAF0F8'),tc(par([run(dt,false,false,'',10)]),1500)]),
+      tr([tc(par([run('Разработал:',true,false,'',10)]),2000,'EAF0F8'),tc(par([run(auth,false,false,'',10)]),5355),tc(par([run('Статус:',true,false,'',10)]),1500,'EAF0F8'),tc(par([run(r.allOk?'✓ ГОДЕН':'✗ НЕ ПРОШЁЛ',true,false,passC,10)]),1500)]),
+    ],[2000,5355,1500,1500]),par([]),
+    H('1','Цель и область применения'),
+    BP(`Настоящий расчёт выполнен в целях выбора и обоснования сечений низковольтных (НН) силовых кабелей 0,4 кВ для системы электрообогрева конденсатопровода. Расчёт выполнен в соответствии с методикой Cable Sizing Philosophy (${docn}) на основании стандартов IEC 60364-5-52 и IEC 60364-4-43.`),
+    H('2','Нормативные ссылки'),
+    tbl([
+      tr([tc(par([run('Обозначение',true,false,'',10)]),3000,'EAF0F8'),tc(par([run('Наименование',true,false,'',10)]),6355,'EAF0F8')]),
+      tr([tc(par([run('IEC 60364-5-52',false,true,'',10)]),3000),tc(par([run('Установки электрические низковольтные. Ч.5-52. Выбор и монтаж. Электропроводки',false,false,'',10)]),6355)]),
+      tr([tc(par([run('IEC 60364-4-43',false,true,'',10)]),3000),tc(par([run('Установки электрические низковольтные. Ч.4-43. Защита от сверхтоков',false,false,'',10)]),6355)]),
+    ],[3000,6355]),par([]),
+    H('3','Исходные данные'),
+    tbl([
+      tr([tc(par([run('Параметр',true,false,'',10)]),4500,'EAF0F8'),tc(par([run('Обозн.',true,false,'',10)]),1500,'EAF0F8'),tc(par([run('Значение',true,false,'',10)]),2000,'EAF0F8'),tc(par([run('Ед.',true,false,'',10)]),1355,'EAF0F8')]),
+      tr([tc(par([run('Мощность нагрузки',false,false,'',10)]),4500),tc(par([run('P',false,true,'',10)]),1500),tc(par([run(String(r.P),false,true,'',10)]),2000),tc(par([run('Вт',false,false,'',10)]),1355)]),
+      tr([tc(par([run('Номинальное напряжение',false,false,'',10)]),4500),tc(par([run('U',false,true,'',10)]),1500),tc(par([run(String(r.U),false,true,'',10)]),2000),tc(par([run('В',false,false,'',10)]),1355)]),
+      tr([tc(par([run('Коэффициент мощности',false,false,'',10)]),4500),tc(par([run('cosφ',false,true,'',10)]),1500),tc(par([run(String(r.cp),false,true,'',10)]),2000),tc(par([run('—',false,false,'',10)]),1355)]),
+      tr([tc(par([run('Длина кабеля',false,false,'',10)]),4500),tc(par([run('L',false,true,'',10)]),1500),tc(par([run(String(r.L),false,true,'',10)]),2000),tc(par([run('м',false,false,'',10)]),1355)]),
+      tr([tc(par([run('Сечение кабеля',false,false,'',10)]),4500),tc(par([run('S',false,true,'',10)]),1500),tc(par([run(`3×${r.S}`,false,true,'',10)]),2000),tc(par([run('мм²',false,false,'',10)]),1355)]),
+      tr([tc(par([run('Способ прокладки',false,false,'',10)]),4500),tc(par([run('—',false,false,'',10)]),1500),tc(par([run(mname,false,false,'',9)]),3355)]),
+      tr([tc(par([run('Температура окр. среды',false,false,'',10)]),4500),tc(par([run('T',false,true,'',10)]),1500),tc(par([run(String(r.T),false,true,'',10)]),2000),tc(par([run('°C',false,false,'',10)]),1355)]),
+      tr([tc(par([run('Ток короткого замыкания',false,false,'',10)]),4500),tc(par([run('Iкз',false,true,'',10)]),1500),tc(par([run(String(r.Isc),false,true,'',10)]),2000),tc(par([run('А',false,false,'',10)]),1355)]),
+      tr([tc(par([run('Время отключения',false,false,'',10)]),4500),tc(par([run('t',false,true,'',10)]),1500),tc(par([run(String(r.t),false,true,'',10)]),2000),tc(par([run('с',false,false,'',10)]),1355)]),
+      tr([tc(par([run('Допустимое падение напряжения',false,false,'',10)]),4500),tc(par([run('Δu_доп',false,true,'',10)]),1500),tc(par([run(String(r.vdl),false,true,'',10)]),2000),tc(par([run('%',false,false,'',10)]),1355)]),
+    ],[4500,1500,2000,1355]),par([]),
+    H('4','Методика расчёта'),
+    BP('Сечение кабеля выбирается по максимальному из трёх критериев:'),
+    BP('— допустимая токонесущая способность (IEC 60364-5-52);'),
+    BP('— допустимое падение напряжения;'),
+    BP('— термическая стойкость к токам КЗ (IEC 60364-4-43).'),
+    SH('4.1','Расчётный ток нагрузки'),FP('I = P / (U × cosφ)'),
+    SH('4.2','Токонесущая способность'),FP('Iz_adj = Iz_rated × C1A × C2A'),BP('C1A — поправка на температуру (табл. B.52-14); C2A — на групповую прокладку (табл. B.52-20).'),
+    SH('4.3','Падение напряжения'),FP('ΔU = 2 × I × L × (R_AC × cosφ + X × sinφ)'),FP('Δu% = ΔU / U × 100'),
+    SH('4.4','Термическая стойкость к токам КЗ'),FP('S_min = I_кз × √t / k'),BP('k = 143 — для Cu/XLPE (90°C → 250°C), IEC 60364-4-43.'),
+    H('5','Расчёт'),
+    SH('5.1','Расчётный ток нагрузки'),
+    FP(`I = P / (U × cosφ) = ${r.P} / (${r.U} × ${r.cp})`),RP(`I = ${f(r.I,3)} А`),FP(`sinφ = √(1 − cosφ²) = ${f(r.sp,4)}`),
+    SH('5.2','Допустимая токонесущая способность'),
+    FP(`Iz_rated (Метод ${r.meth}, S = ${r.S} мм², Cu, XLPE) = ${r.Izr} А  [IEC 60364-5-52, табл. B.52-12]`),
+    FP(`C1A (T = ${r.T}°C) = ${r.c1a}  [табл. B.52-14]`),
+    FP(`C2A (${r.lay} сл., ${r.cpl} каб/сл.) = ${r.c2a}  [табл. B.52-20]`),
+    FP(`CA = C1A × C2A = ${r.c1a} × ${r.c2a} = ${f(r.CA,4)}`),
+    FP(`Iz_adj = ${r.Izr} × ${f(r.CA,4)} = ${f(r.Izadj,3)} А`),
+    CP(r.ok1,`${f(r.I,3)} А ${r.ok1?'≤':'>'} ${f(r.Izadj,3)} А — условие ${r.ok1?'ВЫПОЛНЕНО ✓':'НЕ ВЫПОЛНЕНО ✗'}`),
+    SH('5.3','Падение напряжения'),
+    FP(`R_AC (${r.S} мм²) = ${r.R} Ом/км;  X = ${r.X} Ом/км`),
+    FP(`ΔU = 2 × ${f(r.I,4)} × ${f(r.L/1000,5)} × (${r.R}×${r.cp} + ${r.X}×${f(r.sp,4)})`),
+    RP(`ΔU = ${f(r.dU,5)} В`),
+    FP(`Δu% = ${f(r.dU,5)} / ${r.U} × 100 = ${f(r.dUpct,4)} %`),
+    CP(r.ok2,`${f(r.dUpct,3)} % ${r.ok2?'≤':'>'} ${r.vdl} % — условие ${r.ok2?'ВЫПОЛНЕНО ✓':'НЕ ВЫПОЛНЕНО ✗'}`),
+    SH('5.4','Термическая стойкость к токам КЗ'),
+    FP(`S_min = ${r.Isc} × √${r.t} / 143 = ${r.Isc} × ${f(Math.sqrt(r.t),5)} / 143 = ${f(r.Smin,5)} мм²`),
+    CP(r.ok3,`S выбр. = ${r.S} мм² ${r.ok3?'≥':'<'} S_min = ${f(r.Smin,3)} мм² — условие ${r.ok3?'ВЫПОЛНЕНО ✓':'НЕ ВЫПОЛНЕНО ✗'}`),
+    H('6','Заключение'),
+    tbl([
+      tr([tc(par([run('Критерий',true,false,'',10)]),3500,'EAF0F8'),tc(par([run('Расчётное',true,false,'',10)]),2000,'EAF0F8'),tc(par([run('Предельное',true,false,'',10)]),2000,'EAF0F8'),tc(par([run('Результат',true,false,'',10)]),1855,'EAF0F8')]),
+      tr([tc(par([run('Ток нагрузки / допустимый',false,false,'',10)]),3500),tc(par([run(`${f(r.I,2)} А`,false,true,'',10)]),2000),tc(par([run(`${f(r.Izadj,2)} А`,false,true,'',10)]),2000),tc(par([run(r.ok1?'✓ НОРМ.':'✗ ПРЕВЫШ.',true,false,r.ok1?'1D6F42':'C00000',10)]),1855)]),
+      tr([tc(par([run('Падение напряжения',false,false,'',10)]),3500),tc(par([run(`${f(r.dUpct,3)} %`,false,true,'',10)]),2000),tc(par([run(`${r.vdl} %`,false,true,'',10)]),2000),tc(par([run(r.ok2?'✓ НОРМ.':'✗ ПРЕВЫШ.',true,false,r.ok2?'1D6F42':'C00000',10)]),1855)]),
+      tr([tc(par([run('Сечение по КЗ',false,false,'',10)]),3500),tc(par([run(`${r.S} мм²`,false,true,'',10)]),2000),tc(par([run(`${f(r.Smin,2)} мм²`,false,true,'',10)]),2000),tc(par([run(r.ok3?'✓ НОРМ.':'✗ ПРЕВЫШ.',true,false,r.ok3?'1D6F42':'C00000',10)]),1855)]),
+    ],[3500,2000,2000,1855]),par([]),
+    BP(r.allOk?`Все три условия выбора сечения кабеля выполнены. Выбранное сечение 3×${r.S} мм² обеспечивает требуемую токонесущую способность с учётом понижающих коэффициентов, допустимое падение напряжения и термическую стойкость к токам КЗ.`:`Одно или несколько условий выбора сечения не выполнены. Рекомендуется применить кабель сечением 3×${r.rec||'?'} мм².`),
+    par([run('Рекомендуемое сечение кабеля: ',true,false,'',13),run(`3×${r.rec||r.S} мм²`,true,true,passC,14)],false,80,100),
+    par([run('(тип: Cu / XLPE / PVC / SWA / PVC, 600/1000 В)',false,false,'606060',10)]),
+  ].join('');
+  const docXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="850" w:bottom="1134" w:left="1701" w:header="709" w:footer="709" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+  const styXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="ru-RU"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="60" w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:sz w:val="22"/></w:rPr></w:style></w:styles>`;
+  const setXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:defaultTabStop w:val="720"/><w:compat><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="15"/></w:compat></w:settings>`;
+  const rlsR=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
+  const rlsW=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/></Relationships>`;
+  const ctXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/></Types>`;
+  const zip=new JSZip();
+  zip.file('[Content_Types].xml',ctXml);zip.file('_rels/.rels',rlsR);
+  zip.file('word/document.xml',docXml);zip.file('word/styles.xml',styXml);
+  zip.file('word/settings.xml',setXml);zip.file('word/_rels/document.xml.rels',rlsW);
+  const blob=await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');
+  a.href=url;a.download=`CableSizing_${(feed||'Report').replace(/[^\w]/g,'_')}.docx`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+document.getElementById('i_date').value=new Date().toISOString().split('T')[0];
+document.querySelectorAll('input,select').forEach(el=>el.addEventListener('change',()=>{if(RES)doCalc()}));
+</script>
+</body>
+</html>

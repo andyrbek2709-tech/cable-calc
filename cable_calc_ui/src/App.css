@@ -1,0 +1,48 @@
+﻿body {
+  font-family: Arial, sans-serif;
+  background: #f1f5f9;
+}
+
+.hint-item {
+  border-left: 3px solid #ef4444;
+  padding: 4px 8px;
+  margin: 2px 0;
+  background: #fef2f2;
+  border-radius: 0 4px 4px 0;
+}
+
+.method-row:nth-child(even) {
+  background: #f8fafc;
+}
+
+input:focus,
+select:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 1px;
+}
+
+.tab-active {
+  border-bottom: 3px solid #2563eb;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.status-ok {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-warn {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+details summary {
+  cursor: pointer;
+  user-select: none;
+}
